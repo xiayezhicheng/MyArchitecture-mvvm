@@ -1,0 +1,144 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt' // 注释处理
+
+def releaseTime(){
+    return new Date().format("yyyy-MM-dd",TimeZone.getTimeZone("UTC"))
+}
+
+android {
+
+    compileSdkVersion rootProject.ext.android.androidCompileSdk
+    buildToolsVersion rootProject.ext.android.androidBuildTools
+
+    defaultConfig {
+        applicationId rootProject.ext.android.applicationId
+        minSdkVersion rootProject.ext.android.androidMinSdk
+        targetSdkVersion rootProject.ext.android.androidTargetSdk
+        versionCode rootProject.ext.android.versionCode
+        versionName rootProject.ext.android.versionName
+
+        //dex突破65535的限制
+        multiDexEnabled true
+        // 默认是umeng的渠道
+        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "umeng"]
+
+    }
+
+    dataBinding {
+        enabled true
+    }
+
+    signingConfigs{
+
+        debug{
+            //No debug config
+        }
+
+        release{
+            storeFile file('release.keystore')
+            storePassword "516688"
+            keyAlias "androidreleasekey"
+            keyPassword "516688"
+        }
+    
+    }
+
+    buildTypes {
+
+        debug{
+            //显示Log
+            buildConfigField "boolean","LOG_DEBUG","true"
+
+            versionNameSuffix "-debug"
+            minifyEnabled false
+            zipAlignEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            //不显示Log
+            buildConfigField "boolean","LOG_DEBUG","false"
+
+            minifyEnabled true
+            zipAlignEnabled true
+            //移除无用的resource文件
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+            
+        }
+    }
+
+    // 注释冲突
+    packagingOptions {
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+
+
+    // 友盟多渠道打包
+    productFlavors {
+        wandoujia {}
+        _360 {}
+        baidu {}
+        xiaomi {}
+        tencent {}
+        taobao {}
+    }
+
+    productFlavors.all { flavor ->
+        flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: name]
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                // 输出apk名称为boohee_v1.0_2015-01-15_wandoujia.apk
+                def fileName = "myarchitecture_v${defaultConfig.versionName}_${releaseTime()}_${variant.productFlavors[0].name}.apk"
+                output.outputFile = new File(outputFile.parent, fileName)
+            }
+        }
+    }
+}
+
+
+
+dependencies {
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile project(":CoreCommon")
+
+    //Dependencies
+    def libs = rootProject.ext.libs
+    def debuglibs = rootProject.ext.debuglibs
+    def releaselibs = rootProject.ext.releaselibs
+
+    compile libs.cardView
+    compile libs.appcompat
+    compile libs.supportDesign
+    compile libs.recyclerView
+    compile libs.supportV4
+    compile libs.rxJava
+    compile libs.rxAndroid
+    compile libs.retrofit
+    compile libs.retrofitWithGson
+    compile libs.retrofitWithRxJava
+    compile libs.fresco
+    compile libs.frescookhttp3
+    compile libs.butterKnife
+    compile libs.ultraPtr
+    compile libs.dagger
+
+    debugCompile debuglibs.leakCanary
+    releaseCompile releaselibs.leakCanary
+    debugCompile debuglibs.crashwoodpecker
+    releaseCompile releaselibs.crashwoodpecker
+
+    provided libs.daggerCompiler
+    provided libs.jsr250
+    compile project(path: ':CoreCommon')
+    compile project(path: ':CoreCommon')
+}

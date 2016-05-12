@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="com.wanghao.myarchitecture.ui.viewmodel.RentalViewModel"/>
+    </data>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.dlut.wanghao.myarchitecture.ui.widget.LoadingLayout
+            android:id="@+id/loading_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <in.srain.cube.views.ptr.PtrClassicFrameLayout
+                android:id="@+id/rotate_header_list_view_frame"
+                app:ptr_content="@+id/with_long_press_list_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:ptr_duration_to_close="200"
+                app:ptr_duration_to_close_header="1000"
+                app:ptr_keep_header_when_refresh="true"
+                app:ptr_pull_to_fresh="false"
+                app:ptr_ratio_of_header_height_to_refresh="1.2"
+                app:ptr_resistance="1.7">
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:scrollbarStyle="outsideOverlay"
+                    app:adapter="@{viewModel.getAdapter()}"
+                    app:loadingFooter="@{viewModel.getLoadingFooter()}"
+                    app:layoutType="@{viewModel.getLayoutType()}"/>
+
+            </in.srain.cube.views.ptr.PtrClassicFrameLayout>
+        </com.dlut.wanghao.myarchitecture.ui.widget.LoadingLayout>
+    </RelativeLayout>
+</layout>
