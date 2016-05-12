@@ -139,6 +139,4 @@ dependencies {
 
     provided libs.daggerCompiler
     provided libs.jsr250
-    compile project(path: ':CoreCommon')
-    compile project(path: ':CoreCommon')
 }

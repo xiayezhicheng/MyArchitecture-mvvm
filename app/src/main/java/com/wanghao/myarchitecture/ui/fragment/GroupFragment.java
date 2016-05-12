@@ -4,8 +4,6 @@ import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,8 +41,6 @@ public class GroupFragment extends SwipeRefreshBaseFragment {
     private GroupItemAdapter adapter;
     private boolean isInitLoad = true;//是否第一次加载
     private int mPage = 0;
-    private boolean isVisible ;
-    private boolean isInit ;
 
     @Inject
     GroupViewModel groupViewModel;
@@ -86,61 +82,17 @@ public class GroupFragment extends SwipeRefreshBaseFragment {
             }
         });
 
-        mRecyclerView.setHasFixedSize(true);
-
         data = new ArrayList<Group>();
         groupViewModel.setData(data);
         adapter = groupViewModel.getAdapter();
 
         mLoadingFooter = groupViewModel.getLoadingFooter();
-        mLoadingFooter.setOnClickLoadListener(new LoadingFooter.onClickLoadListener() {
-            @Override
-            public void onClick() {
-                loadNextPage();
-            }
-        });
 
-        mRecyclerView.addOnScrollListener(recyclerScrollListener);
+        //监听RecyclerView滑动动作
+        setRecyclerView(mRecyclerView,mLoadingFooter,adapter);
 
-        //延迟加载
-        isInit = true;
-        onFirstLoad();
         return view;
     }
-
-    RecyclerView.OnScrollListener recyclerScrollListener = new RecyclerView.OnScrollListener(){
-
-        @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-
-            super.onScrolled(recyclerView, dx, dy);
-
-            int visibleItemCount    = mRecyclerView.getLayoutManager().getChildCount();
-            int totalItemCount      = mRecyclerView.getLayoutManager().getItemCount();
-            int firstVisibleItem = 0;
-
-            RecyclerView.LayoutManager layoutManager = mRecyclerView.getLayoutManager();
-            if (layoutManager instanceof GridLayoutManager){
-                firstVisibleItem = ((GridLayoutManager)layoutManager).findFirstVisibleItemPosition();
-            }else if(layoutManager instanceof LinearLayoutManager){
-                firstVisibleItem = ((LinearLayoutManager)layoutManager).findFirstVisibleItemPosition();
-            }
-
-            if (mLoadingFooter.getState() == LoadingFooter.State.Idle) {
-                if (firstVisibleItem + visibleItemCount >= totalItemCount
-                        && totalItemCount != 0
-                        && totalItemCount != adapter.getHeaderViewCount() + adapter.getBottomViewCount()
-                        && adapter.getContentItemCount() > 0) {
-                    loadNextPage();
-                }
-            } else if (mLoadingFooter.getState() == LoadingFooter.State.InvalidateNet) {
-                if (!mLoadingFooter.getView().isShown()) {
-                    mLoadingFooter.setState(LoadingFooter.State.Idle);
-                }
-            }
-
-        }
-    };
 
     private void loadData(final int page) {
 
@@ -210,32 +162,17 @@ public class GroupFragment extends SwipeRefreshBaseFragment {
         loadFirstPage();
     }
 
-    private void loadNextPage() {
+    @Override
+    public void loadNextPage() {
         mLoadingFooter.setState(LoadingFooter.State.Loading);
         loadData(mPage+1);
     }
 
-    protected void loadFirstPage() {
+    @Override
+    public void loadFirstPage() {
         if (isInitLoad) loadingLayout.showLoading();
         mPage = 0;
         loadData(mPage);
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        isVisible = isVisibleToUser;
-        //显示该fragment之前载入activity的时候就已经初始化完成
-        onFirstLoad();
-    }
-
-    public void onFirstLoad() {
-        //延迟加载(懒加载)
-        if (data != null && data.size() == 0) {
-            if(isVisible&&isInit){
-                loadFirstPage();
-            }
-        }
     }
 
     @Override

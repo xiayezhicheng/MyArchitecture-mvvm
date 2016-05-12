@@ -2,9 +2,14 @@ package com.wanghao.myarchitecture.ui.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-import com.dlut.wanghao.myarchitecture.ui.fragment.BaseFragment;
+import com.dlut.wanghao.myarchitecture.adapter.HeaderBottomItemAdapter;
+import com.dlut.wanghao.myarchitecture.ui.fragment.BaseLazyLoadFragment;
+import com.dlut.wanghao.myarchitecture.ui.widget.LoadingFooter;
 import com.wanghao.myarchitecture.R;
 
 import in.srain.cube.views.ptr.PtrClassicFrameLayout;
@@ -15,14 +20,16 @@ import in.srain.cube.views.ptr.PtrHandler;
 /**
  * Created by wanghao on 2015/12/14.
  */
-public class SwipeRefreshBaseFragment extends BaseFragment {
+public abstract class SwipeRefreshBaseFragment extends BaseLazyLoadFragment {
 
     protected PtrClassicFrameLayout mPtrFrame;
 
     /**
      * refresh开始时回调
      */
-    public void onBeginRefresh() {}
+    public abstract void onBeginRefresh();
+
+    public abstract void loadNextPage();
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
@@ -54,5 +61,53 @@ public class SwipeRefreshBaseFragment extends BaseFragment {
         mPtrFrame.setPullToRefresh(false);
         // default is true
         mPtrFrame.setKeepHeaderWhenRefresh(true);
+    }
+
+    protected void setRecyclerView(final RecyclerView mRecyclerView, final LoadingFooter mLoadingFooter
+                                    , final HeaderBottomItemAdapter adapter){
+
+        mRecyclerView.setHasFixedSize(true);
+
+        mLoadingFooter.setOnClickLoadListener(new LoadingFooter.onClickLoadListener() {
+            @Override
+            public void onClick() {
+                loadNextPage();
+            }
+        });
+
+        RecyclerView.OnScrollListener recyclerScrollListener = new RecyclerView.OnScrollListener(){
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+
+                super.onScrolled(recyclerView, dx, dy);
+
+                int visibleItemCount    = mRecyclerView.getLayoutManager().getChildCount();
+                int totalItemCount      = mRecyclerView.getLayoutManager().getItemCount();
+                int firstVisibleItem = 0;
+
+                RecyclerView.LayoutManager layoutManager = mRecyclerView.getLayoutManager();
+                if (layoutManager instanceof GridLayoutManager){
+                    firstVisibleItem = ((GridLayoutManager)layoutManager).findFirstVisibleItemPosition();
+                }else if(layoutManager instanceof LinearLayoutManager){
+                    firstVisibleItem = ((LinearLayoutManager)layoutManager).findFirstVisibleItemPosition();
+                }
+
+                if (mLoadingFooter.getState() == LoadingFooter.State.Idle) {
+                    if (firstVisibleItem + visibleItemCount >= totalItemCount
+                            && totalItemCount != 0
+                            && totalItemCount != adapter.getHeaderViewCount() + adapter.getBottomViewCount()
+                            && adapter.getContentItemCount() > 0) {
+                        loadNextPage();
+                    }
+                } else if (mLoadingFooter.getState() == LoadingFooter.State.InvalidateNet) {
+                    if (!mLoadingFooter.getView().isShown()) {
+                        mLoadingFooter.setState(LoadingFooter.State.Idle);
+                    }
+                }
+            }
+        };
+
+        mRecyclerView.addOnScrollListener(recyclerScrollListener);
     }
 }
